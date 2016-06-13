@@ -37,8 +37,8 @@ Following lines contains node respresentations.
 
 Node representation takes four lines:
 - first line contains the node label
-- second line contains ```In``` representation of the node
-- third line contains ```Out``` representation of the node
+- second line contains space-separated ```In``` representation of the node
+- third line contains space-separated ```Out``` representation of the node
 - fourth line contains normalization constant ```Z``` of the node
 
 One can use both ```In``` abd ```Out``` representations of the node, but in some cases ```Out``` representation is more informative, so it is better to use it. For more details see original BLM paper.

@@ -233,7 +233,7 @@ void free_model()
 int main(int argc, char *argv[])
 {
     if (argc != 2) {
-        printf("Usage: ./BLM config.cfg");
+        printf("Usage: ./BLM config.cfg\n");
         exit(EXIT_FAILURE);
     }
     
