@@ -8,6 +8,7 @@
 #include <cmath>
 #include <vector>
 #include <locale>
+#include <ctime>
 
 #include "utils.h"
 #include "thread_class.h"
@@ -24,7 +25,7 @@ vector<int> edges_src, edges_dst;
 vector<float> edges_weight;
 
 int nu;
-float gamma_;
+float gamma_, gamma__;
 float eta;
 int vector_size;
 int number_of_threads;
@@ -78,27 +79,28 @@ void initialize_variables()
     number_of_threads = string_to_int(config["number_of_threads"]);
     eta = string_to_ldouble(config["eta"]);
     gamma_ = string_to_ldouble(config["gamma"]);
+    gamma__ = gamma_ / (nu + 1);
 }
 
 void initialize_model()
 {
-    Z = (float *)calloc(number_of_nodes, sizeof(*Z));
-    In = (float **)calloc(number_of_nodes, sizeof(*In));
-    Out = (float **)calloc(number_of_nodes, sizeof(*Out));
+    Z = (float *) calloc(number_of_nodes, sizeof(*Z));
+    In = (float **) calloc(number_of_nodes, sizeof(*In));
+    Out = (float **) calloc(number_of_nodes, sizeof(*Out));
     
     float Z_init = log(number_of_nodes);
     for (int i = 0; i < number_of_nodes; ++i) {
-        In[i] = (float *)calloc(vector_size, sizeof(*In[i]));
-        Out[i] = (float *)calloc(vector_size, sizeof(*Out[i]));
+        In[i] = (float *) calloc(vector_size, sizeof(*In[i]));
+        Out[i] = (float *) calloc(vector_size, sizeof(*Out[i]));
         Z[i] = Z_init;
-        
+
         for (int j = 0; j < vector_size; ++j) {
             In[i][j] = (rand_double() - 0.5) / vector_size;
             Out[i][j] = (rand_double() - 0.5) / vector_size;
         }
     }
-    
-    p_n = (float *)calloc(number_of_nodes, sizeof(*p_n));
+
+    p_n = (float *) calloc(number_of_nodes, sizeof(*p_n));
     for (int i = 0; i < number_of_edges; ++i) {
         p_n[edges_src[i]] += 1.0;
         p_n[edges_dst[i]] += 1.0;
@@ -108,31 +110,45 @@ void initialize_model()
     }
 }
 
-void learn_edge(int u, int v, float w, int k)
+inline void compute_pm0(int u, int v,
+                        float *pm0,
+                        float *dpm0In, float *dpm0Out, float *dpm0Z)
 {
     float sp = 0;
-    
+
     for (int t = 0; t < vector_size; ++t) {
         sp += In[u][t] * Out[v][t];
     }
-    
-    float pm0 = exp(sp - Z[u]);
-    
-    float nu_pn = nu * p_n[v];
-    
-    float coeff;
-    
-    if (k == 1) {
-        coeff = nu_pn / (pm0 + nu_pn);
-    } else {
-        coeff = -pm0 / (pm0 + nu_pn);
-    }
-    
+
+    *pm0 = exp(sp - Z[u]);
+
     for (int t = 0; t < vector_size; ++t) {
-        In[u][t] += eta * w * (coeff * Out[v][t] - 2.0 * gamma_ * In[u][t]);
-        Out[v][t] += eta * w * (coeff * In[u][t] - 2.0 * gamma_ * Out[v][t]);
+        dpm0In[t] = (*pm0) * Out[v][t];
+        dpm0Out[t] = (*pm0) * In[u][t];
     }
-    Z[u] += -eta * w * coeff;
+
+    *dpm0Z = -(*pm0);
+}
+
+inline void learn_edge(int u, int v, float w, int k)
+{
+	float pm0, dpm0In[vector_size], dpm0Out[vector_size], dpm0Z;
+    float nu_pn = nu * p_n[v];
+    float coeff;
+
+	compute_pm0(u, v, &pm0, &dpm0In[0], &dpm0Out[0], &dpm0Z);
+
+    if (k == 1) {
+        coeff = nu_pn / (pm0 + nu_pn) / pm0;
+    } else {
+        coeff = -1.0 / (pm0 + nu_pn);
+    }
+
+    for (int t = 0; t < vector_size; ++t) {
+        In[u][t] += eta * w * (coeff * dpm0In[t] - 2.0 * gamma__ * In[u][t]);
+        Out[v][t] += eta * w * (coeff * dpm0Out[t] - 2.0 * gamma__ * Out[v][t]);
+    }
+    Z[u] += eta * w * coeff * dpm0Z;
 }
 
 class LearnThread: public Thread
@@ -228,8 +244,6 @@ void free_model()
     free(Out);
 }
 
-#include <ctime>
-
 int main(int argc, char *argv[])
 {
     if (argc != 2) {
@@ -251,5 +265,5 @@ int main(int argc, char *argv[])
     
     free_model();
     
-    cerr << double(clock()) / CLOCKS_PER_SEC << endl;
+    cerr << "BLM execution time: " << double(clock()) / CLOCKS_PER_SEC << endl;
 }
