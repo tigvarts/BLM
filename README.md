@@ -1,8 +1,10 @@
 # BLM
 
 <b>Bilinear Link Model (BLM)</b> is a probabilistic model for <a href="https://en.wikipedia.org/wiki/Feature_learning">learning representations</a> of nodes in directed networks.
-BLM is described in <a href="http://tigvarts.com/science/aist_2015.pdf">Learning Representations in Directed Networks</a> paper which was presented on <a href="http://aistconf.org/2015">AIST'2015 conference</a>.
+BLM is described in <a href="https://files.tigvarts.com/science/aist_2015.pdf">Learning Representations in Directed Networks</a> paper which was presented on <a href="https://legacy.aistconf.org/2015">AIST'2015 conference</a>.
 This is a scalable parallel implementation of the proposed in the paper learning representation algorithm.
+It easily processes graphs with millions of nodes and tens millions of edges, and could be used for even bigger graphs.
+The only limitation is that the graph and the learnable representations must fit into RAM.
 
 ### Installing
 
@@ -41,4 +43,4 @@ Node representation takes four lines:
 - third line contains space-separated ```Out``` representation of the node
 - fourth line contains normalization constant ```Z``` of the node
 
-One can use both ```In``` and ```Out``` representations of the node, but in some cases ```Out``` representation is more informative, so it is better to use it. For more details see the original BLM paper.
+One can use both ```In``` and ```Out``` representations of the node, but in some cases ```Out``` representation is more informative, so it is better to use it. For more details see the original paper.
